@@ -16,7 +16,6 @@ after_success:
   #log in to the docker CLI
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
   #take those image and push them to docker hub
-  #Fuck Ya all nigga
   - docker push rachitsxn292/multi-client
   - docker push rachitsxn292/multi-nginx
   - docker push rachitsxn292/multi-server
