@@ -1,54 +1,22 @@
-version: '3'
+sudo: required
 services:
-  postgres:
-    image: 'postgres:latest'
-  redis:
-    image: 'redis:latest'
-  nginx:
-    restart: always
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./nginx
-    ports:
-      - '3050:80' 
-  api:
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./server
-    volumes:
-      - /app/node_modules
-      - ./server:/app
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PGUSER=postgres
-      - PGHOST=postgres
-      - PGDATABASE=postgres
-      - PGPASSWORD=postgres_password
-      - PGPORT=5432
-  client:
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./client
-    volumes:
-      - /app/node_modules
-      - ./client:/app
-  worker:
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./worker
-    volumes:
-      - /app/node_modules
-      - ./worker:/app
-    
-deploy: 
-  provider: elasticbeanstalk
-  region: us-east-2
-  app: multi-docker
-  env: MultiDocker-env
-  bucket_name: elasticbeanstalk-us-east-2-583033153236
-  bucket_path: docker_multi
-  on: 
-    branch: master
-  access_key_id: $AWS_ACCESS_KEY
-  secret_access_key: $AWS_SECRET_KEY
+  - docker
+
+before_install:
+  - docker build -t rachitsxn292/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true rachitsxn292/react-test npm test
+
+after_success:
+  - docker build -t rachitsxn292/multi-client ./client 
+  - docker build -t rachitsxn292/multi-nginx ./nginx 
+  - docker build -t rachitsxn292/multi-server ./server 
+  - docker build -t rachitsxn292/multi-worker ./worker 
+  #log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  #take those image and push them to docker hub
+  - docker push rachitsxn292/multi-client
+  - docker push rachitsxn292/multi-nginx
+  - docker push rachitsxn292/multi-server
+  - docker push rachitsxn292/multi-worker
